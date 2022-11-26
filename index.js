@@ -57,7 +57,7 @@ async function run() {
       res.send(brands);
     });
     // get single brands api
-    app.get("/brands/:id", async (req, res) => {
+    app.get("/category/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const brand = await brandsCollection.findOne(query);
@@ -69,6 +69,22 @@ async function run() {
       const addData = req.body;
       const result = await addsCollection.insertOne(addData);
       res.send(result);
+    });
+
+    // get seller wise advertisement api
+    app.get("/adds/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { sellerEmail: email };
+      const adds = await addsCollection.find(query).toArray();
+      res.send(adds);
+    });
+
+    // get brand wise advertisement api
+    app.get("/products/:brand", async (req, res) => {
+      const brand = req.params.brand;
+      const query = { brand: brand };
+      const products = await addsCollection.find(query).toArray();
+      res.send(products);
     });
   } finally {
   }
