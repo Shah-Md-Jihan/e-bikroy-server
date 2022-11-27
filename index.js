@@ -27,6 +27,21 @@ async function run() {
       res.send(result);
     });
 
+    // get all user api
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // get email wise user api
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
+
     // check admin api
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
@@ -41,6 +56,20 @@ async function run() {
       const query = { email };
       const user = await usersCollection.findOne(query);
       res.send({ isSeller: user?.role === "seller" });
+    });
+
+    // seller verified api
+    app.put("/users/verify/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          verified: "true",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
     });
 
     // add brand api
@@ -68,6 +97,20 @@ async function run() {
     app.post("/post/add", async (req, res) => {
       const addData = req.body;
       const result = await addsCollection.insertOne(addData);
+      res.send(result);
+    });
+
+    // update seller verification in post collection
+    app.put("/add/verify/seller/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { sellerEmail: email };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          verified: "true",
+        },
+      };
+      const result = await addsCollection.updateMany(filter, updatedDoc, options);
       res.send(result);
     });
 
