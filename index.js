@@ -55,7 +55,7 @@ async function run() {
       const email = req.params.email;
       const query = { email };
       const user = await usersCollection.findOne(query);
-      res.send({ isSeller: user?.role === "seller" });
+      res.send({ isSeller: user?.role === "seller" && user?.active === "true" });
     });
 
     // seller verified api
@@ -66,6 +66,33 @@ async function run() {
       const updatedDoc = {
         $set: {
           verified: "true",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
+    });
+
+    // activity change api
+    app.put("/users/activity/change/true/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          active: "true",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
+    });
+    app.put("/users/activity/change/false/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          active: "false",
         },
       };
       const result = await usersCollection.updateOne(filter, updatedDoc, options);
