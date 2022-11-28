@@ -34,6 +34,14 @@ async function run() {
       res.send(result);
     });
 
+    // get all seller api
+    app.get("/sellers", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      const adds = result.filter((x) => x.role === "seller");
+      res.send(adds);
+    });
+
     // get email wise user api
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
