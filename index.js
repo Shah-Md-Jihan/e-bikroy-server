@@ -127,6 +127,14 @@ async function run() {
       res.send(result);
     });
 
+    //Check advertisement api
+    app.get("/adds/advertisement", async (req, res) => {
+      const query = {};
+      const advertisement = await addsCollection.find(query).toArray();
+      const adds = advertisement.filter((x) => x.advertisement === "true");
+      res.send(adds);
+    });
+
     // update seller verification in post collection
     app.put("/add/verify/seller/:email", async (req, res) => {
       const email = req.params.email;
@@ -147,6 +155,20 @@ async function run() {
       const query = { sellerEmail: email };
       const adds = await addsCollection.find(query).toArray();
       res.send(adds);
+    });
+
+    // get make product advertisement api
+    app.put("/adds/make/advertisement/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          advertisement: "true",
+        },
+      };
+      const result = await addsCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
     });
 
     // get brand wise advertisement api
