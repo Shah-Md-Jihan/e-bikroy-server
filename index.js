@@ -19,6 +19,7 @@ async function run() {
     const usersCollection = client.db("eBikroy").collection("users");
     const brandsCollection = client.db("eBikroy").collection("brands");
     const addsCollection = client.db("eBikroy").collection("adds");
+    const ordersCollection = client.db("eBikroy").collection("orders");
 
     // create user api
     app.post("/users", async (req, res) => {
@@ -140,6 +141,20 @@ async function run() {
     app.post("/post/add", async (req, res) => {
       const addData = req.body;
       const result = await addsCollection.insertOne(addData);
+      res.send(result);
+    });
+
+    // add order api
+    app.post("/order/add", async (req, res) => {
+      const orderData = req.body;
+      const result = await ordersCollection.insertOne(orderData);
+      res.send(result);
+    });
+    // buyer wise orders
+    app.get("/order/all/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { buyerEmail: email };
+      const result = await ordersCollection.find(query).toArray();
       res.send(result);
     });
 
