@@ -42,6 +42,14 @@ async function run() {
       res.send(adds);
     });
 
+    // get all buyers api
+    app.get("/buyers", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      const adds = result.filter((x) => x.role !== "admin" && x.role !== "seller");
+      res.send(adds);
+    });
+
     // get email wise user api
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
