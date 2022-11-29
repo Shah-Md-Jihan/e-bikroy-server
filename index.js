@@ -5,6 +5,7 @@ const { query } = require("express");
 const port = process.env.PORT || 5000;
 const app = express();
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mfyq6m8.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -20,11 +21,43 @@ async function run() {
     const brandsCollection = client.db("eBikroy").collection("brands");
     const addsCollection = client.db("eBikroy").collection("adds");
     const ordersCollection = client.db("eBikroy").collection("orders");
+    const paymentsCollection = client.db("eBikroy").collection("payments");
 
     // create user api
     app.post("/users", async (req, res) => {
       const user = req.body;
       const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const order = req.body;
+      const price = order.price;
+      const amount = price * 100;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        currency: "usd",
+        amount: amount,
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // payment store in db api
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const result = await paymentsCollection.insertOne(payment);
+      const id = payment.orderId;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const updatedResult = await ordersCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
 
@@ -156,6 +189,12 @@ async function run() {
       const query = { buyerEmail: email };
       const result = await ordersCollection.find(query).toArray();
       res.send(result);
+    });
+    app.get("/order/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const order = await ordersCollection.findOne(query);
+      res.send(order);
     });
 
     //Check advertisement api
