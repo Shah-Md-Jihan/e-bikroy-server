@@ -63,6 +63,7 @@ async function run() {
       const updateAdd = {
         $set: {
           paid: true,
+          advertisement: "false",
         },
       };
       const updatedAddResult = await addsCollection.updateOne(addFilter, updateAdd);
@@ -209,8 +210,16 @@ async function run() {
     app.get("/adds/advertisement", async (req, res) => {
       const query = {};
       const advertisement = await addsCollection.find(query).toArray();
-      const adds = advertisement.filter((x) => x.advertisement === "true");
+      const adds = advertisement.filter((x) => x.advertisement === "true" && x.paid !== true);
       res.send(adds);
+    });
+
+    // delete seller products
+    app.delete("/adds/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await addsCollection.deleteOne(query);
+      res.send(result);
     });
 
     // update seller verification in post collection
