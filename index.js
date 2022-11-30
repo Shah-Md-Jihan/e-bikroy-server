@@ -58,6 +58,14 @@ async function run() {
         },
       };
       const updatedResult = await ordersCollection.updateOne(filter, updatedDoc);
+      const addId = payment.productId;
+      const addFilter = { _id: ObjectId(addId) };
+      const updateAdd = {
+        $set: {
+          paid: true,
+        },
+      };
+      const updatedAddResult = await addsCollection.updateOne(addFilter, updateAdd);
       res.send(result);
     });
 
@@ -244,9 +252,12 @@ async function run() {
     // get brand wise advertisement api
     app.get("/products/:brand", async (req, res) => {
       const brand = req.params.brand;
+
       const query = { brand: brand };
+
       const products = await addsCollection.find(query).toArray();
-      res.send(products);
+      const unPaid = products.filter((x) => x.paid !== true);
+      res.send(unPaid);
     });
   } finally {
   }
