@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { query } = require("express");
 const port = process.env.PORT || 5000;
@@ -9,6 +10,21 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mfyq6m8.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "Unauthorized Access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(401).send({ message: "Unauthorized Access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 
 // middleware
 app.use(cors());
@@ -22,6 +38,12 @@ async function run() {
     const addsCollection = client.db("eBikroy").collection("adds");
     const ordersCollection = client.db("eBikroy").collection("orders");
     const paymentsCollection = client.db("eBikroy").collection("payments");
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
+      res.send({ token });
+    });
 
     // create user api
     app.post("/users", async (req, res) => {
@@ -201,7 +223,12 @@ async function run() {
       res.send(result);
     });
     // buyer wise orders
-    app.get("/order/all/:email", async (req, res) => {
+    app.get("/order/all/:email", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      console.log("inside order api", decoded);
+      if (decoded.email !== req.params.email) {
+        res.status(403).send({ message: "forbidden access" });
+      }
       const email = req.params.email;
       const query = { buyerEmail: email };
       const result = await ordersCollection.find(query).toArray();
